@@ -8,6 +8,7 @@
 #include "AHTxx.h"
 #include "SSD1306Wire.h"
 
+
 const char *ssid = "unifi";
 const char *password = "3N3FXAI4RP";
 const char *mqttServer = "192.168.0.55"; // mqtt server
