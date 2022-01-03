@@ -1,0 +1,863 @@
+#include <iostream>
+#include <vector>
+
+struct s_rawValue
+{
+    unsigned long millis;
+    unsigned long rawValue;
+};
+
+struct s_publish
+{
+    int device;
+    int measure;
+    double value;
+    int amount;
+};
+
+std::vector<s_rawValue> v_rawValues;
+std::vector<s_publish> v_publish;
+
+s_rawValue rawValuesHelper;
+s_publish publishHelper;
+s_publish tmp_publish;
+
+inline bool operator==(const s_publish &lhs, const s_publish &rhs)
+{
+    return lhs.device == rhs.device &&
+           lhs.measure == rhs.measure &&
+           lhs.value == rhs.value;
+}
+
+int main()
+{
+
+    std::cout << "hello world\n";
+
+    rawValuesHelper.millis = 30000;
+    rawValuesHelper.rawValue = 0x11001932;
+    v_rawValues.push_back(rawValuesHelper);
+
+    rawValuesHelper.millis = 30500;
+    rawValuesHelper.rawValue = 0x11001932;
+    v_rawValues.push_back(rawValuesHelper);
+
+    rawValuesHelper.millis = 31000;
+    rawValuesHelper.rawValue = 0x11001932;
+    v_rawValues.push_back(rawValuesHelper);
+
+    rawValuesHelper.millis = 31500;
+    rawValuesHelper.rawValue = 0x120024ED;
+    v_rawValues.push_back(rawValuesHelper);
+
+    rawValuesHelper.millis = 32000;
+    rawValuesHelper.rawValue = 0x120024ED;
+    v_rawValues.push_back(rawValuesHelper);
+
+    rawValuesHelper.millis = 32500;
+    rawValuesHelper.rawValue = 0x120024ED;
+    v_rawValues.push_back(rawValuesHelper);
+
+    rawValuesHelper.millis = 33000;
+    rawValuesHelper.rawValue = 0x120024ED;
+    v_rawValues.push_back(rawValuesHelper);
+
+    rawValuesHelper.millis = 32500;
+    rawValuesHelper.rawValue = 0x130175B7;
+    v_rawValues.push_back(rawValuesHelper);
+
+    rawValuesHelper.millis = 33000;
+    rawValuesHelper.rawValue = 0x130175B7;
+    v_rawValues.push_back(rawValuesHelper);
+
+    rawValuesHelper.millis = 33500;
+    rawValuesHelper.rawValue = 0x130175B7;
+    v_rawValues.push_back(rawValuesHelper);
+
+    rawValuesHelper.millis = 34000;
+    rawValuesHelper.rawValue = 0x130175B4;
+    v_rawValues.push_back(rawValuesHelper);
+
+    rawValuesHelper.millis = 34500;
+    rawValuesHelper.rawValue = 0x130175B7;
+    v_rawValues.push_back(rawValuesHelper);
+
+    if (v_rawValues.empty() == false)
+    {
+        std::cout << "empty: false";
+    }
+    else
+    {
+        std::cout << "empty: true";
+    }
+
+    std::cout << "\n";
+    std::cout << "size : " << v_rawValues.size() << "\n";
+    std::cout << "1st element millis : " << v_rawValues.front().millis << "\n";
+    // std::cout << "1st element raw    : " <<  v_rawValues.front().RawValue << "\n";
+    /*
+
+    v_rawValues.erase(v_rawValues.begin());
+
+    std::cout << "\n";
+    std::cout << "size : " << v_rawValues.size() << "\n";
+    std::cout << "1st element: " << std::hex << v_rawValues.front() << "\n";
+
+    */
+
+    std::cout << "\n";
+
+    for (std::vector<s_rawValue>::iterator it = v_rawValues.begin(); it != v_rawValues.end(); ++it)
+    {
+        //        std::cout << "position : " << std::dec << (*it).millis << "  " << std::hex << (*it).rawValue << "\n";
+        //            publishHelper.device = (*it).rawValue >> 28;
+       bool l_valueFound {false};
+
+        std::cout << " \ntraitement de : ";
+        std::cout << "device  : " << ((*it).rawValue >> 28);
+        std::cout << "  measure : " << (((*it).rawValue & 0xF000000) >> 24);
+        std::cout << "  value   : " << ((*it).rawValue & 0xFFFFFF);
+        std::cout << "\n";
+
+        publishHelper.device = ((*it).rawValue >> 28);
+        publishHelper.measure = (((*it).rawValue & 0xF000000) >> 24);
+        publishHelper.value = ((*it).rawValue & 0xFFFFFF);
+
+        // ********************* si v_publish est vide, pas de passage dans for et donc pas de comaraison des valeurs !!!!!
+
+
+        for (std::vector<s_publish>::iterator itpub = v_publish.begin(); itpub != v_publish.end(); ++itpub)
+        {
+            std::cout << "----- comparer " << (*itpub).device << " " << publishHelper.device << " / ";
+            std::cout << (*itpub).measure << " " << publishHelper.measure << " / ";
+            std::cout << (*itpub).value << " " << publishHelper.value << " / ";
+
+            if ((*itpub) == publishHelper)
+            //            if (tmp_publish == publishHelper)
+            {
+                std::cout << "true";
+                (*itpub).amount++;
+                l_valueFound= true;
+                break;
+            }
+// dabord boucler sut tous les enregistrements 
+// push back seulement si la lecture de TOUS les enregistrements ne renvoie pas de match!!!!
+//sortir le push back de la boucle
+
+            
+        }
+        if (!l_valueFound)                  
+            v_publish.push_back(publishHelper);
+
+    }
+    /*
+
+
+    temp_queue for values to process: millis + value + occurency
+    iterate on queue from pos 1
+      pop 1st queue value in temp queue.
+      same sensor and same measurement within millis +- 10 seconds
+        if value already exists, add 1 to occurency
+        else add value to temp queue
+      else
+        generate add to queue of topics to publish
+      endif
+    */
+
+    // int qsd = 4;
+    // int qsd {4};
+    std::cout << "****************************************************" << std::endl;
+    for (std::vector<s_publish>::iterator itpub = v_publish.begin(); itpub != v_publish.end(); ++itpub)
+    {
+        std::cout  << (*itpub).device << " / " << (*itpub).measure << " / " << (*itpub).value << " / " << (*itpub).amount << std::endl;
+    }
+
+    return 0;
+}
+
+
+
+
+
+
+rue******  RESULTS  **********************************************
+1 / 1 / 3922.00 / 9
+1 / 2 / 9023.00 / 19
+1 / 3 / 97149.00 / 9
+1 / 4 / 4673.00 / 54
+1 / 1 / 3928.00 / 9
+1 / 2 / 9001.00 / 9
+1 / 3 / 97151.00 / 19
+1 / 1 / 3935.00 / 9
+1 / 3 / 97146.00 / 9
+0 / 0 / 0.00 / 0
+1 / 1 / 3937.00 / 9
+1 / 2 / 8976.00 / 9
+1 / 3 / 97156.00 / 9
+0 / 0 / 6.00 / 0
+1 / 1 / 3941.00 / 6
+1 / 2 / 8964.00 / 6
+1 / 3 / 97159.00 / 8
+0 / 0 / 11.00 / 0
+1 / 1 / 3947.00 / 9
+1 / 2 / 8961.00 / 5
+1 / 1 / 3956.00 / 8
+1 / 2 / 8950.00 / 8
+1 / 3 / 97164.00 / 9
+1 / 1 / 3964.00 / 7
+1 / 2 / 8912.00 / 2
+1 / 3 / 97161.00 / 8
+1 / 4 / 4654.00 / 6
+
+
+
+
+
+
+
+
+
+
+
+
+
+0 6.00 / 
+----- comparer 0 0 / 0 0 / 6.00 6.00 / 
+true******  RESULTS  **********************************************
+1 / 1 / 3922.00 / 9
+1 / 2 / 9023.00 / 19
+1 / 3 / 97149.00 / 9
+1 / 4 / 4673.00 / 54
+1 / 1 / 3928.00 / 9
+1 / 2 / 9001.00 / 9
+1 / 3 / 97151.00 / 19
+1 / 1 / 3935.00 / 9
+1 / 3 / 97146.00 / 9
+0 / 0 / 0.00 / 0
+1 / 1 / 3937.00 / 9
+1 / 2 / 8976.00 / 9
+1 / 3 / 97156.00 / 9
+0 / 0 / 6.00 / 2
+1 / 1 / 3941.00 / 6
+1 / 2 / 8964.00 / 6
+1 / 3 / 97159.00 / 8
+0 / 0 / 11.00 / 0
+1 / 1 / 3947.00 / 9
+1 / 2 / 8961.00 / 5
+1 / 1 / 3956.00 / 8
+1 / 2 / 8950.00 / 8
+1 / 3 / 97164.00 / 9
+1 / 1 / 3964.00 / 7
+1 / 2 / 8912.00 / 2
+1 / 3 / 97161.00 / 8
+1 / 4 / 4654.00 / 27
+1 / 1 / 3978.00 / 2
+1 / 2 / 8828.00 / 3
+1 / 3 / 97168.00 / 2
+1 / 1 / 3998.00 / 9
+1 / 2 / 8788.00 / 9
+1 / 3 / 97181.00 / 9
+1 / 4 / 4693.00 / 8
+0 / 0 / 7.00 / 1
+1 / 1 / 3999.00 / 9
+1 / 2 / 8671.00 / 9
+1 / 3 / 97189.00 / 9
+1 / 1 / 4010.00 / 9
+1 / 2 / 8686.00 / 9
+1 / 3 / 97186.00 / 9
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void doTestData(){
+
+rawValuesHelper.millis = 96476;
+rawValuesHelper.rawValue = 285216771;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 96591;
+rawValuesHelper.rawValue = 285216771;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 96706;
+rawValuesHelper.rawValue = 285216771;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 96821;
+rawValuesHelper.rawValue = 285216771;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 96936;
+rawValuesHelper.rawValue = 285216771;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 97051;
+rawValuesHelper.rawValue = 285216771;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 97166;
+rawValuesHelper.rawValue = 285216771;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 97281;
+rawValuesHelper.rawValue = 285216771;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 97396;
+rawValuesHelper.rawValue = 285216771;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 97511;
+rawValuesHelper.rawValue = 285216771;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 97626;
+rawValuesHelper.rawValue = 301998570;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 97741;
+rawValuesHelper.rawValue = 301998570;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 97856;
+rawValuesHelper.rawValue = 301998570;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 97971;
+rawValuesHelper.rawValue = 301998570;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 98085;
+rawValuesHelper.rawValue = 301998570;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 98200;
+rawValuesHelper.rawValue = 301998570;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 98315;
+rawValuesHelper.rawValue = 301998570;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 98430;
+rawValuesHelper.rawValue = 301998570;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 98545;
+rawValuesHelper.rawValue = 301998570;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 98660;
+rawValuesHelper.rawValue = 301998570;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 98775;
+rawValuesHelper.rawValue = 318864425;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 98890;
+rawValuesHelper.rawValue = 318864425;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 99005;
+rawValuesHelper.rawValue = 318864425;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 99120;
+rawValuesHelper.rawValue = 318864425;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 99235;
+rawValuesHelper.rawValue = 318864425;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 99350;
+rawValuesHelper.rawValue = 318864425;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 99465;
+rawValuesHelper.rawValue = 318864425;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 99580;
+rawValuesHelper.rawValue = 318864425;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 99695;
+rawValuesHelper.rawValue = 318864425;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 99810;
+rawValuesHelper.rawValue = 318864425;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 99925;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 100040;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 100155;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 100270;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 100385;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 100500;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 100615;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 100730;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 100845;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 273462;
+rawValuesHelper.rawValue = 285216769;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 273577;
+rawValuesHelper.rawValue = 285216769;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 273692;
+rawValuesHelper.rawValue = 285216769;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 273807;
+rawValuesHelper.rawValue = 285216769;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 273922;
+rawValuesHelper.rawValue = 285216769;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 274036;
+rawValuesHelper.rawValue = 285216769;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 274151;
+rawValuesHelper.rawValue = 285216769;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 274266;
+rawValuesHelper.rawValue = 285216769;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 274381;
+rawValuesHelper.rawValue = 285216769;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 274496;
+rawValuesHelper.rawValue = 301998563;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 274611;
+rawValuesHelper.rawValue = 301998563;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 274726;
+rawValuesHelper.rawValue = 301998563;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 274841;
+rawValuesHelper.rawValue = 301998563;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 274956;
+rawValuesHelper.rawValue = 301998563;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 275071;
+rawValuesHelper.rawValue = 301998563;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 275186;
+rawValuesHelper.rawValue = 301998563;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 275301;
+rawValuesHelper.rawValue = 301998563;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 275416;
+rawValuesHelper.rawValue = 301998563;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 275532;
+rawValuesHelper.rawValue = 301998563;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 275647;
+rawValuesHelper.rawValue = 318864441;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 275762;
+rawValuesHelper.rawValue = 318864441;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 275876;
+rawValuesHelper.rawValue = 318864441;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 275991;
+rawValuesHelper.rawValue = 318864441;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 276107;
+rawValuesHelper.rawValue = 318864441;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 276222;
+rawValuesHelper.rawValue = 318864441;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 276337;
+rawValuesHelper.rawValue = 318864441;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 276452;
+rawValuesHelper.rawValue = 318864441;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 276567;
+rawValuesHelper.rawValue = 318864441;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 276682;
+rawValuesHelper.rawValue = 318864441;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 276796;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 276911;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 277026;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 277141;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 277256;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 277370;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 277485;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 277600;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 277715;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 450223;
+rawValuesHelper.rawValue = 285216767;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 450338;
+rawValuesHelper.rawValue = 285216767;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 450453;
+rawValuesHelper.rawValue = 285216767;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 450568;
+rawValuesHelper.rawValue = 285216767;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 450683;
+rawValuesHelper.rawValue = 285216767;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 450798;
+rawValuesHelper.rawValue = 285216767;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 450913;
+rawValuesHelper.rawValue = 285216767;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 451028;
+rawValuesHelper.rawValue = 285216767;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 451143;
+rawValuesHelper.rawValue = 285216767;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 451258;
+rawValuesHelper.rawValue = 285216767;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 451373;
+rawValuesHelper.rawValue = 301998553;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 451488;
+rawValuesHelper.rawValue = 301998553;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 451603;
+rawValuesHelper.rawValue = 301998553;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 451718;
+rawValuesHelper.rawValue = 301998553;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 451833;
+rawValuesHelper.rawValue = 301998553;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 451947;
+rawValuesHelper.rawValue = 301998553;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 452062;
+rawValuesHelper.rawValue = 301998553;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 452177;
+rawValuesHelper.rawValue = 301998553;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 452292;
+rawValuesHelper.rawValue = 301998553;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 452407;
+rawValuesHelper.rawValue = 301998553;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 452522;
+rawValuesHelper.rawValue = 318864451;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 452637;
+rawValuesHelper.rawValue = 318864451;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 452752;
+rawValuesHelper.rawValue = 318864451;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 452867;
+rawValuesHelper.rawValue = 318864451;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 452982;
+rawValuesHelper.rawValue = 318864451;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 453097;
+rawValuesHelper.rawValue = 318864451;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 453212;
+rawValuesHelper.rawValue = 318864451;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 453327;
+rawValuesHelper.rawValue = 318864451;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 453442;
+rawValuesHelper.rawValue = 318864451;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 453557;
+rawValuesHelper.rawValue = 318864451;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 453672;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 453787;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 453901;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 454016;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 454131;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 454246;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 454361;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 454476;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+
+rawValuesHelper.millis = 454591;
+rawValuesHelper.rawValue = 335548974;
+    v_rawValues.push_back(rawValuesHelper);
+
+}
