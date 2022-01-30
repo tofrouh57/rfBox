@@ -8,7 +8,6 @@
 #include "AHTxx.h"
 #include "SSD1306Wire.h"
 
-
 const char *ssid = "unifi";
 const char *password = "3N3FXAI4RP";
 const char *mqttServer = "192.168.0.55"; // mqtt server
@@ -21,9 +20,9 @@ PubSubClient MQTTclient(espClient); // lib required for mqtt
 
 unsigned long startTime = millis();
 
-#define CO2_RX_PIN D7   //32 Rx pin which the MHZ19 Tx pin is attached to
-#define CO2_TX_PIN D8   //33 Tx pin which the MHZ19 Rx pin is attached
-#define RF_PIN D6  // esp32: 12
+#define CO2_RX_PIN D7 // 32 Rx pin which the MHZ19 Tx pin is attached to
+#define CO2_TX_PIN D8 // 33 Tx pin which the MHZ19 Rx pin is attached
+#define RF_PIN D6     // esp32: 12
 
 const bool c_setVerbose{false};
 
@@ -54,6 +53,7 @@ struct s_envValue
   char hum[20];
   char pres[20];
   char volt[20];
+  char door[20];
 };
 
 std::vector<s_rawValue> v_rawValues;
@@ -104,7 +104,7 @@ volatile unsigned int nReceivedProtocol = 0;
 
 unsigned int timings[RCSWITCH_MAX_CHANGES];
 int nReceiveTolerance = 60;
-static const  _Protocol proto[] = {
+static const _Protocol proto[] = {
     {350, {1, 31}, {1, 3}, {3, 1}, false},    // protocol 1
     {650, {1, 10}, {1, 2}, {2, 1}, false},    // protocol 2
     {100, {30, 71}, {4, 11}, {9, 6}, false},  // protocol 3
@@ -236,6 +236,10 @@ void processRawValues(int l_nbEntries)
   {
     bool l_valueFound{false}; // set valueFound false to know if a new entry has to be created in vector publish
     s_publish publishHelper;
+    Serial.println();
+    Serial.println();
+    Serial.print(" ***  procesing raw value  :  ");
+    Serial.println(v_rawValues[itRaw].rawValue);
     publishHelper.device = v_rawValues[itRaw].rawValue >> 28;
     publishHelper.measure = ((v_rawValues[itRaw].rawValue & 0xF000000) >> 24);
     publishHelper.millis = (v_rawValues[itRaw].millis);
@@ -265,7 +269,25 @@ void processRawValues(int l_nbEntries)
       publishHelper.value = (v_rawValues[itRaw].rawValue & 0xFFFFFF) / 1000.0;
       break;
     }
+    case 9: // doorState
+    {
+      publishHelper.value = (v_rawValues[itRaw].rawValue & 0xFFFFFF);
+      break;
     }
+    default:
+    {
+      publishHelper.value = 0;
+    }
+    }
+    Serial.print(" ***  procesing publishHelper device  :  ");
+    Serial.println(publishHelper.device);
+    Serial.print(" ***  procesing publishHelper measurement  :  ");
+    Serial.println(publishHelper.measure);
+    Serial.print(" ***  procesing publishHelper value  :  ");
+    Serial.println(publishHelper.value);
+    Serial.println();
+    Serial.println();
+
     // loop on all records to be published
     for (std::vector<s_publish>::iterator itpub = v_publish.begin(); itpub != v_publish.end(); ++itpub)
     {
@@ -278,7 +300,9 @@ void processRawValues(int l_nbEntries)
       }
     }
     // if it£s the first time we see this device/measure, add it to the list
-    if ((!l_valueFound) && (publishHelper.device > 0) && (publishHelper.device <= 2) && (publishHelper.measure > 0) && (publishHelper.measure <= 4))
+    // if there is a valie filtered out by device or measuremetn, the rfBox crashes!! --> why?
+    // soo process all and filter out later
+    if ((!l_valueFound) && (publishHelper.device > 0) && (publishHelper.device <= 20) && (publishHelper.measure > 0) && (publishHelper.measure <= 20))
       v_publish.push_back(publishHelper);
   }
 
@@ -290,7 +314,7 @@ void processRawValues(int l_nbEntries)
 
   // check for valid values
   // compare and set value to 0 if a biger exists for same device / measure
-  for (int i = 0; i < v_publish.size() - 1; i++)
+  for (unsigned int i = 0; i < v_publish.size() - 1; i++)
   {
     if ((v_publish[i].device == v_publish[i + 1].device) &&
         (v_publish[i].measure == v_publish[i + 1].measure) &&
@@ -326,13 +350,10 @@ void initWiFi()
   display.display();
 }
 
-
-
 bool publishTopic(char i_topic[40], char i_payload[40])
 {
   //  while (!MQTTclient.connected())
   //  {
-
   Serial.print(millis());
   Serial.println(":  Connecting to MQTT...");
 
@@ -342,7 +363,6 @@ bool publishTopic(char i_topic[40], char i_payload[40])
     Serial.println(":  connected");
     MQTTclient.publish(i_topic, i_payload);
     return true;
-    
   }
   else
   {
@@ -359,8 +379,7 @@ bool publishTopic(char i_topic[40], char i_payload[40])
 void setup()
 {
 
-
-// Initialising the UI will init the display too.
+  // Initialising the UI will init the display too.
   display.init();
   display.flipScreenVertically();
   display.setFont(ArialMT_Plain_10);
@@ -372,10 +391,7 @@ void setup()
 
   Serial.begin(115200);
 
-
   initWiFi();
-
-
 
   // init CO2
   co2Serial.begin(9600);
@@ -396,53 +412,48 @@ void setup()
     delay(5000);
   }
 
-    display.drawString(0, 20, "AHT .. OK");
-    display.display();
+  display.drawString(0, 20, "AHT .. OK");
+  display.display();
   Serial.println(F("AHT10 OK"));
-
-  
 
   // init with 2 sensors
   s_envValue l_envValues;
   v_envValues.push_back(l_envValues);
   v_envValues.push_back(l_envValues);
 
-pinMode(D3, INPUT_PULLUP);
-pinMode(D4, INPUT_PULLUP);
-pinMode(D5, INPUT_PULLUP);
-
-
+  pinMode(D3, INPUT_PULLUP);
+  pinMode(D4, INPUT_PULLUP);
+  pinMode(D5, INPUT_PULLUP);
 }
 
-int wifi_delay{30 * 1000};
+unsigned long wifi_delay{30 * 1000};
 unsigned long wifi_millis{millis() + wifi_delay};
-int rf_delay{10 * 1000};
+unsigned long rf_delay{10 * 1000};
 unsigned long rf_millis{millis() + rf_delay};
-int co2_delay{3 * 60 * 1000};
+unsigned long co2_delay{3 * 60 * 1000};
 unsigned long co2_millis{millis() + co2_delay};
-int aht_delay{3 * 60 * 1000};
+unsigned long aht_delay{3 * 60 * 1000};
 unsigned long aht_millis{millis() + aht_delay};
-int disp_delay{10 * 1000};
+unsigned long disp_delay{10 * 1000};
 unsigned long disp_millis{millis() + disp_delay};
 bool _disp{false};
-
-
-
 
 void loop()
 {
 
-
-  if (digitalRead(D3) == LOW) Serial.println("D3 pressed");
-  if (digitalRead(D4) == LOW) Serial.println("D4 pressed");
-  if (digitalRead(D5) == LOW) Serial.println("D5 pressed");
-
-
+  if (digitalRead(D3) == LOW)
+    Serial.println("D3 pressed");
+  if (digitalRead(D4) == LOW)
+    Serial.println("D4 pressed");
+  if (digitalRead(D5) == LOW)
+    Serial.println("D5 pressed");
 
   if ((millis() - aht_millis) > aht_delay)
   {
     float ahtValue{0};
     s_publish publishHelper;
+
+    Serial.println(" :::::::::: entering aht_delay");
 
     aht_millis = millis();
     Serial.print(millis());
@@ -484,6 +495,8 @@ void loop()
   {
     s_publish publishHelper;
 
+    Serial.println(" :::::::::: entering co2_delay");
+
     co2_millis = millis();
     Serial.print(millis());
     Serial.print(":  reading CO2. Result : ");
@@ -500,6 +513,7 @@ void loop()
 
   if ((millis() - rf_millis) > rf_delay)
   {
+    Serial.println(" :::::::::: entering rf_delay");
     rf_millis = millis();
     unsigned int curEntries{v_rawValues.size()};
     if ((_nbEntries == curEntries) && (curEntries > 0))
@@ -515,6 +529,7 @@ void loop()
 
   if ((millis() - wifi_millis) > wifi_delay)
   {
+    Serial.println(" :::::::::: entering wifi_delay");
 
     wifi_millis = millis();
     if (WiFi.status() != WL_CONNECTED)
@@ -543,7 +558,9 @@ void loop()
 
   if ((millis() - disp_millis) > disp_delay)
   {
-      disp_millis = millis();
+    Serial.println(" :::::::::: entering disp_delay");
+
+    disp_millis = millis();
     if (_disp)
     {
       display.clear();
@@ -553,7 +570,7 @@ void loop()
       display.drawString(64, 15, v_envValues[1].hum);
       display.drawString(0, 31, v_envValues[1].co2);
       display.drawString(64, 31, "ppm");
-      
+
       display.display();
     }
     else
@@ -576,6 +593,8 @@ void loop()
   if ((v_publish.size() > 0) && (WiFi.status() == WL_CONNECTED))
 
   {
+    Serial.println(" :::::::::: entering something to publish? call publish topic");
+
     for (std::vector<s_publish>::iterator itpub = v_publish.begin(); itpub != v_publish.end(); ++itpub)
     {
       if ((*itpub).amount == 0)
@@ -583,7 +602,7 @@ void loop()
 
       char l_topic[40];
       char l_payload[40];
-      char l_string[40];
+//      char l_string[40];
       char buffer[40];
       // publish to mqtt and replace publishhelper content with current vector value
       Serial.print(millis());
@@ -601,7 +620,7 @@ void loop()
       Serial.print(" / ");
       Serial.println();
       sprintf(buffer, "%4.2f", (*itpub).value);
-      strcpy(l_payload , buffer);
+      strcpy(l_payload, buffer);
       strcpy(l_topic, "");
       strcat(l_topic, "environment");
       strcat(l_topic, "/");
@@ -609,16 +628,18 @@ void loop()
       strcat(l_topic, buffer);
       strcat(l_topic, "/");
 
+
+// build vEnvValues to be displayed by OLED screen
       switch ((*itpub).measure)
       {
       case 0:
       {
-      strcat(l_topic, "alive");
+        strcat(l_topic, "alive");
         break;
       }
       case 1:
       {
-      strcat(l_topic, "temp");
+        strcat(l_topic, "temp");
         strcpy(v_envValues[(*itpub).device - 1].temp, "");
         strcat(v_envValues[(*itpub).device - 1].temp, l_payload);
         strcat(v_envValues[(*itpub).device - 1].temp, "°");
@@ -627,7 +648,7 @@ void loop()
       }
       case 2:
       {
-      strcat(l_topic, "hum");
+        strcat(l_topic, "hum");
         strcpy(v_envValues[(*itpub).device - 1].hum, "");
         strcat(v_envValues[(*itpub).device - 1].hum, l_payload);
         strcat(v_envValues[(*itpub).device - 1].hum, "%");
@@ -636,28 +657,44 @@ void loop()
       }
       case 3:
       {
-      strcat(l_topic, "pres");
+        strcat(l_topic, "pres");
         strcpy(v_envValues[(*itpub).device - 1].pres, "");
         strcat(v_envValues[(*itpub).device - 1].pres, l_payload);
-//        strcat(v_envValues[(*itpub).device - 1].pres, " hPa");
+        //        strcat(v_envValues[(*itpub).device - 1].pres, " hPa");
         break;
       }
       case 4:
       {
-              strcat(l_topic,"volt");
+        strcat(l_topic, "volt");
         strcpy(v_envValues[(*itpub).device - 1].volt, "");
         strcat(v_envValues[(*itpub).device - 1].volt, l_payload);
-//        strcat(v_envValues[(*itpub).device - 1].volt, " V");
+        //        strcat(v_envValues[(*itpub).device - 1].volt, " V");
         break;
       }
       case 5:
       {
-      strcat(l_topic, "co2");
+        strcat(l_topic, "co2");
         strcpy(v_envValues[(*itpub).device - 1].co2, "");
         strcat(v_envValues[(*itpub).device - 1].co2, l_payload);
- //       strcat(v_envValues[(*itpub).device - 1].co2, " ppm");
+        //       strcat(v_envValues[(*itpub).device - 1].co2, " ppm");
         break;
       }
+      case 9:
+      {
+        strcat(l_topic, "door");
+        strcpy(v_envValues[(*itpub).device - 1].door, "");
+        if ((*itpub).value == 1)
+        {
+          strcpy(l_payload, "Closed");
+        }
+        else
+        {
+           strcpy(l_payload, "Opened");
+        }
+        strcat(v_envValues[(*itpub).device - 1].door, l_payload);
+        break;
+      }
+
       }
 
       // sprintf (buffer, "%d plus %d is %d", a, b, a+b);
